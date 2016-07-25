@@ -6,11 +6,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 
 import org.eclipse.swt.graphics.RGB;
-import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import com.raytheon.uf.common.colormap.Color;
 import com.raytheon.uf.common.colormap.ColorMapException;
 import com.raytheon.uf.common.colormap.prefs.ColorMapParameters;
@@ -49,7 +47,9 @@ import edu.wisc.ssec.cimss.common.dataplugin.convectprob.ConvectProbRecord;
  * Date         Ticket#     Engineer    Description
  * ------------ ----------  ----------- --------------------------
  * Mar 27, 2014 DCS 15298   lcronce     Initial Creation.
- *
+ * Jun 09, 2016 DR  18946   lcronce     Update to plugin addressing
+ *                                      paint error associated with
+ *                                      null pointer exception.
  * </pre
  *
  * @author Lee Cronce
@@ -69,21 +69,8 @@ AbstractVizResource<ConvectProbResourceData, MapDescriptor> {
      * the time
      */
     private class DisplayFrame {
+
         Collection<ConvectProbRecord> records = new ArrayList<ConvectProbRecord>();
-
-        IWireframeShape shape;
-
-        protected void dispose() {
-            if (this.shape != null) {
-                this.shape.dispose();
-                this.shape = null;
-            }
-        }
-
-        protected void createShapes(IGraphicsTarget target) {
-            dispose();
-            shape = target.createWireframeShape(false, descriptor);
-        }
 
     }
 
@@ -93,7 +80,7 @@ AbstractVizResource<ConvectProbResourceData, MapDescriptor> {
     private Map<DataTime, DisplayFrame> frames = new HashMap<DataTime, DisplayFrame>();
 
     private DataTime displayedDataTime;
-
+    
     /**
      * Constructor to define an instance of this resource
      *
@@ -126,17 +113,13 @@ AbstractVizResource<ConvectProbResourceData, MapDescriptor> {
      */
     @Override
     protected void disposeInternal() {
-        // Make sure we ditch all the shapes before we go
-        disposeFrames();
+        clearDisplayFrames();
     }
 
-    /**
-     * Disposes of all frames of visualization
-     */
-    private void disposeFrames() {
+    protected void clearDisplayFrames() {
         synchronized (frames) {
-            for (DisplayFrame frame : frames.values()) {
-                frame.dispose();
+            if (!frames.isEmpty()){
+                frames.clear();
             }
         }
     }
@@ -206,7 +189,7 @@ AbstractVizResource<ConvectProbResourceData, MapDescriptor> {
         Point point = geom.createPoint(latLon);
         for (ConvectProbRecord record : frame.records) {
             // Check if we have an area we are rendering
-            if (resourceData.isDisplayShape()) {
+            if (record != null && resourceData.isDisplayShape()) {
                 try {
                     Geometry[] pg = record.getPolyGeoms();
                     for (int i=0; i < pg.length; i++) {
@@ -256,13 +239,12 @@ AbstractVizResource<ConvectProbResourceData, MapDescriptor> {
         }
         for (ConvectProbRecord record : newRecords) {
             // If we need to draw anything for this record then keep it
-            if (resourceData.isDisplayShape()) {
+            if (record != null && resourceData.isDisplayShape()) {
                 frame.records.add(record);
             }
         }
         newRecords.clear();
-        // Get some new shapes
-        frame.createShapes(target);
+
         // Update each record
         for (ConvectProbRecord record : frame.records) {
             File f = HDF5Util.findHDF5Location(record);
@@ -303,21 +285,21 @@ AbstractVizResource<ConvectProbResourceData, MapDescriptor> {
             return;
         }
 
-        if (frame.records != null && frame.shape != null) {
+        if (frame.records != null) {
             boolean drawShape = false;
             Color color;
             float a, thick;
             RGB shapeColor = new RGB(255, 255, 255);
             for (ConvectProbRecord rec : frame.records) {
-                if (rec.getPolyGeoms() != null) {
+                if (rec != null && rec.getPolyGeoms() != null) {
                     Geometry[] polyGeoms = rec.getPolyGeoms();
                     int[] probabilities = rec.getProbabilities();
                     for (int j=0; j < 101; j++) {
-                        frame.shape.reset();
+                        IWireframeShape iwfs = target.createWireframeShape(false, descriptor);
                         drawShape = false;
                         for (int i=0; i < polyGeoms.length; i++) {
                             if (probabilities[i] == j) {
-                                frame.shape.addLineSegment(polyGeoms[i].getCoordinates());
+                                iwfs.addLineSegment(polyGeoms[i].getCoordinates());
                                 drawShape = true;
                             }
                         }
@@ -331,7 +313,8 @@ AbstractVizResource<ConvectProbResourceData, MapDescriptor> {
                             if (j < 50) {
                                 thick = 4.0f;
                             }
-                            target.drawWireframeShape(frame.shape, shapeColor, thick, LineStyle.SOLID, a);
+                            target.drawWireframeShape(iwfs, shapeColor, thick, LineStyle.SOLID, a);
+                            iwfs.dispose();
                         }
                     }
                 }
@@ -378,27 +361,6 @@ AbstractVizResource<ConvectProbResourceData, MapDescriptor> {
     }
 
     /**
-     * @see com.raytheon.uf.viz.core.rsc.AbstractVizResource#project(org.opengis.referencing.crs.CoordinateReferenceSystem)
-     */
-    @Override
-    public void project(CoordinateReferenceSystem crs) throws VizException {
-        synchronized (frames) {
-            disposeFrames();
-            // add as unprocessed to make sure frames created
-            for (DataTime time : frames.keySet()) {
-                DisplayFrame frame = frames.get(time);
-                if (frame != null) {
-                    List<ConvectProbRecord> copyList = new ArrayList<ConvectProbRecord>(
-                            frame.records);
-                    synchronized (unprocessedRecords) {
-                        unprocessedRecords.put(time, copyList);
-                    }
-                }
-            }
-        }
-    }
-
-    /**
      * @see com.raytheon.uf.viz.core.rsc.AbstractVizResource#remove(com.raytheon.uf.common.time.DataTime)
      */
     @Override
@@ -412,12 +374,12 @@ AbstractVizResource<ConvectProbResourceData, MapDescriptor> {
             notNeeded.clear();
         }
 
-        DisplayFrame frame = null;
+        DisplayFrame notNeededFrame;
         synchronized (frames) {
-            frame = frames.remove(time);
+            notNeededFrame = frames.remove(time);
         }
-        if (frame != null) {
-            frame.dispose();
+        if (notNeededFrame != null) {
+            notNeededFrame.records.clear();
         }
     }
 

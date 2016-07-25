@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: NOAA/CIMSS Prob Severe (viz.convectprob)
 Bundle-SymbolicName: edu.wisc.ssec.cimss.viz.convectprob;singleton:=true
-Bundle-Version: 1.14.4.qualifier
+Bundle-Version: 1.16.4.qualifier
 Require-Bundle: org.eclipse.ui,
  org.geotools,
  com.raytheon.uf.common.datastorage,
