@@ -3,7 +3,6 @@ package edu.wisc.ssec.cimss.viz.convectprob.rsc;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -50,7 +49,8 @@ import edu.wisc.ssec.cimss.common.dataplugin.convectprob.ConvectProbRecord;
  * Jun 09, 2016 DR  18946   lcronce     Update to plugin addressing
  *                                      paint error associated with
  *                                      null pointer exception.
- * </pre
+ * Dec 01, 2017 5863        mapeters    Change dataTimes to a NavigableSet
+ * </pre>
  *
  * @author Lee Cronce
  * @version 1.0
@@ -89,7 +89,7 @@ AbstractVizResource<ConvectProbResourceData, MapDescriptor> {
      */
     protected ConvectProbResource(ConvectProbResourceData resourceData,
             LoadProperties loadProperties) {
-        super(resourceData, loadProperties);
+        super(resourceData, loadProperties, false);
         resourceData.addChangeListener(new IResourceDataChanged() {
             @Override
             public void resourceChanged(ChangeType type, Object object) {
@@ -104,7 +104,6 @@ AbstractVizResource<ConvectProbResourceData, MapDescriptor> {
                 issueRefresh();
             }
         });
-        this.dataTimes = new ArrayList<DataTime>();
 
     }
 
@@ -121,19 +120,6 @@ AbstractVizResource<ConvectProbResourceData, MapDescriptor> {
             if (!frames.isEmpty()){
                 frames.clear();
             }
-        }
-    }
-
-    /**
-     * @see com.raytheon.uf.viz.core.rsc.AbstractVizResource#getDataTimes()
-     */
-    @Override
-    public DataTime[] getDataTimes() {
-        if (this.dataTimes == null) {
-            return new DataTime[0];
-        }
-        synchronized (dataTimes) {
-            return this.dataTimes.toArray(new DataTime[0]);
         }
     }
 
@@ -344,7 +330,6 @@ AbstractVizResource<ConvectProbResourceData, MapDescriptor> {
             if (brandNew) {
                 synchronized (dataTimes) {
                     this.dataTimes.add(dataTime);
-                    Collections.sort(this.dataTimes);
                 }
             }
 
