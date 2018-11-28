@@ -1,0 +1,19 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: NOAA/CIMSS ProbSevere Model Common Data Plugin
+Bundle-SymbolicName: edu.wisc.ssec.cimss.common.dataplugin.probsevere
+Bundle-Version: 1.19.2.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Export-Package: edu.wisc.ssec.cimss.common.dataplugin.probsevere,
+ edu.wisc.ssec.cimss.common.dataplugin.probsevere.impl
+Import-Package: com.fasterxml.jackson.annotation,
+ com.raytheon.uf.common.dataplugin,
+ com.raytheon.uf.common.dataplugin.persist,
+ com.raytheon.uf.common.datastorage,
+ com.raytheon.uf.common.datastorage.records,
+ com.raytheon.uf.common.serialization.annotations,
+ com.raytheon.uf.common.status,
+ com.vividsolutions.jts.geom,
+ com.vividsolutions.jts.io,
+ javax.persistence,
+ org.hibernate.annotations

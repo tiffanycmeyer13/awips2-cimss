@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<menuTemplate xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+    <contribute xsi:type="subMenu" menuText="NOAA/CIMSS ProbSevere Products">
+
+        <contribute xsi:type="subMenu" menuText="CONUS">
+            <contribute xsi:type="bundleItem" file="bundles/ProbSevere.xml" menuText="NOAA/CIMSS ProbSevere Model" id="probsevereModel">
+                <substitute key="modelType" value="probsevere"/>
+                <substitute key="probThresh" value="50"/>
+                <substitute key="torShapeThresh" value="3"/>
+                <substitute key="showID" value="false"/>
+            </contribute>
+            <contribute xsi:type="bundleItem" file="bundles/ProbSevere.xml" menuText="NOAA/CIMSS ProbTor Model" id="probtorModel">
+                <substitute key="modelType" value="probtor"/>
+                <substitute key="probThresh" value="50"/>
+                <substitute key="showID" value="false"/>
+            </contribute>
+            <contribute xsi:type="bundleItem" file="bundles/ProbSevere.xml" menuText="NOAA/CIMSS ProbHail Model" id="probhailModel">
+                <substitute key="modelType" value="probhail"/>
+                <substitute key="probThresh" value="50"/>
+                <substitute key="showID" value="false"/>
+            </contribute>
+            <contribute xsi:type="bundleItem" file="bundles/ProbSevere.xml" menuText="NOAA/CIMSS ProbWind Model" id="probwindModel">
+                <substitute key="modelType" value="probwind"/>
+                <substitute key="probThresh" value="50"/>
+                <substitute key="showID" value="false"/>
+            </contribute>
+        </contribute>
+
+    </contribute>
+
+</menuTemplate>
