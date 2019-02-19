@@ -53,7 +53,9 @@ import edu.wisc.ssec.cimss.common.dataplugin.probsevere.ProbSevereRecord;
  *                                      file types and behavior. Also updated the 
  *                                      package name and methods to use ProbSevere 
  *                                      instead of ConvectProb to better reflect the 
- *                                      product origin.
+ *                                      product origin.  Also added logic to address
+ *                                      new timeAgnostic behavior of
+ *                                      AbstractVizResource class.
  *
  * </pre
  *
@@ -74,6 +76,8 @@ AbstractVizResource<ProbSevereResourceData, MapDescriptor> {
 
     private DataTime displayedDataTime;
 
+    private static boolean isTimeAgnostic = false;
+
     /**
      * Constructor to define an instance of this resource
      *
@@ -82,7 +86,7 @@ AbstractVizResource<ProbSevereResourceData, MapDescriptor> {
      */
     protected ProbSevereResource(ProbSevereResourceData resourceData,
             LoadProperties loadProperties) {
-        super(resourceData, loadProperties);
+        super(resourceData, loadProperties, isTimeAgnostic);
         resourceData.addChangeListener(new IResourceDataChanged() {
             @Override
             public void resourceChanged(ChangeType type, Object object) {
@@ -98,6 +102,17 @@ AbstractVizResource<ProbSevereResourceData, MapDescriptor> {
             }
         });
 
+    }
+
+    /**
+     * Method that declares if the resource is time agnostic. A time agnostic
+     * resource does not pertain to time (e.g. static map backgrounds)
+     *
+     * @return true if resource is time agnostic
+     */
+    @Override
+    public boolean isTimeAgnostic() {
+        return isTimeAgnostic;
     }
 
     /**
@@ -482,15 +497,19 @@ AbstractVizResource<ProbSevereResourceData, MapDescriptor> {
      */
     @Override
     public String getName() {
+        String name = "NOAA/CIMSS Prob";
         if (resourceData.getModelType().equalsIgnoreCase("probtor")) {
-            return "NOAA/CIMSS ProbTor Model (%)";
+            name += "Tor";
         } else if (resourceData.getModelType().equalsIgnoreCase("probhail")) {
-            return "NOAA/CIMSS ProbHail Model (%)";
+            name += "Hail";
         } else if (resourceData.getModelType().equalsIgnoreCase("probwind")) {
-            return "NOAA/CIMSS ProbWind Model (%)";
+            name += "Wind";
         } else {
-            return "NOAA/CIMSS ProbSevere Model (%)";
+            name += "Severe";
         }
+        name += " Model (%)";
+
+        return name;
     }
 
     /**
