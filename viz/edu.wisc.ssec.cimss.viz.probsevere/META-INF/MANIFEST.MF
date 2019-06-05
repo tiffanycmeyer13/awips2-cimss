@@ -21,8 +21,8 @@ Import-Package: com.raytheon.uf.common.colormap,
  com.raytheon.uf.viz.core.rsc.capabilities,
  com.raytheon.uf.viz.productbrowser,
  com.raytheon.viz.ui,
- com.vividsolutions.jts.geom,
- com.vividsolutions.jts.operation.buffer,
+ org.locationtech.jts.geom,
+ org.locationtech.jts.operation.buffer,
  edu.wisc.ssec.cimss.common.dataplugin.probsevere
 Require-Bundle: org.eclipse.swt
 Bundle-ActivationPolicy: lazy
