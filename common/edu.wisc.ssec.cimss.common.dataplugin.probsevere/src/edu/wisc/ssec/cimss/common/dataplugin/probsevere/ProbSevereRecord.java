@@ -22,8 +22,8 @@ import com.raytheon.uf.common.datastorage.records.StringDataRecord;
 import com.raytheon.uf.common.serialization.annotations.DynamicSerialize;
 import com.raytheon.uf.common.status.IUFStatusHandler;
 import com.raytheon.uf.common.status.UFStatus;
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.io.WKTReader;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.io.WKTReader;
 
 import edu.wisc.ssec.cimss.common.dataplugin.probsevere.impl.ProbSevereGeometry;
 import edu.wisc.ssec.cimss.common.dataplugin.probsevere.impl.ProbSevereModelType;

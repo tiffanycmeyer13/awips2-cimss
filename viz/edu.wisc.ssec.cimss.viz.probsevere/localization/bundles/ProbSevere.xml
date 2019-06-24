@@ -22,7 +22,7 @@
                                   isRequeryNecessaryOnTimeMatch="true" 
                                   retrieveData="true" 
                                   probThresh="${probThresh;50}"
-                                  torThresh="${torShapeThresh;3}"
+                                  torShapeThresh="${torShapeThresh;3}"
                                   baseShape="${baseShape;severe}"
                                   modelType="${modelType;probsevere}" 
                                   showObjectID="${showID;false}">
