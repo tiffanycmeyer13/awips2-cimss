@@ -19,6 +19,6 @@
         further_licensing_information.
     -->
 <requestPatterns xmlns:ns2="group">
-    <regex>^SSEC_AWIPS_PROBSEVERE.*.json$</regex>
-    <regex>^SSEC_AWIPS_CONVECTPROB.*.ascii$</regex>
+    <regex>^MRMS_PROBSEVERE.*.json$</regex>
+    <regex>^MRMS_CONVECTPROB.*.ascii$</regex>
 </requestPatterns>
