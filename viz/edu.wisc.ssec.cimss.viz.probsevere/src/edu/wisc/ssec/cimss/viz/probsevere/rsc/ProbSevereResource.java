@@ -1,9 +1,7 @@
 package edu.wisc.ssec.cimss.viz.probsevere.rsc;
 
 import java.io.File;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
 
 import org.eclipse.swt.graphics.RGB;
@@ -56,7 +54,11 @@ import edu.wisc.ssec.cimss.common.dataplugin.probsevere.ProbSevereRecord;
  *                                      product origin.  Also added logic to address
  *                                      new timeAgnostic behavior of
  *                                      AbstractVizResource class.
- *
+ * Jul 23, 2019 DR 21469    lcronce     Updated plugin to remove unnecessary use of
+ *              DR 21470                Collections and Lists of ProbSevereRecord type
+ *                                      within HashMaps of unprocessedRecords and 
+ *                                      frames.  Only one ProbSevereRecord exists per 
+ *                                      DataTime instance.
  * </pre
  *
  * @author Lee Cronce
@@ -70,9 +72,9 @@ AbstractVizResource<ProbSevereResourceData, MapDescriptor> {
             .getHandler(ProbSevereResource.class);
 
     // Place to store records that have not yet been processed
-    private Map<DataTime, Collection<ProbSevereRecord>> unprocessedRecords = new HashMap<DataTime, Collection<ProbSevereRecord>>();
+    private Map<DataTime, ProbSevereRecord> unprocessedRecords = new HashMap<DataTime, ProbSevereRecord>();
 
-    private Map<DataTime, Collection<ProbSevereRecord>> frames = new HashMap<DataTime, Collection<ProbSevereRecord>>();
+    private Map<DataTime, ProbSevereRecord> frames = new HashMap<DataTime, ProbSevereRecord>();
 
     private DataTime displayedDataTime;
 
@@ -165,11 +167,11 @@ AbstractVizResource<ProbSevereResourceData, MapDescriptor> {
      */
     @Override
     public String inspect(ReferencedCoordinate coord) throws VizException {
-        Collection<ProbSevereRecord> frameRecs = null;
+        ProbSevereRecord frameRec = null;
         synchronized (frames) {
-            frameRecs = frames.get(this.displayedDataTime);
+            frameRec = frames.get(this.displayedDataTime);
         }
-        if (frameRecs == null) {
+        if (frameRec == null) {
             return "";
         }
         StringBuilder sample = new StringBuilder();
@@ -181,58 +183,54 @@ AbstractVizResource<ProbSevereResourceData, MapDescriptor> {
         }
         GeometryFactory geom = new GeometryFactory();
         Point point = geom.createPoint(latLon);
-        for (ProbSevereRecord record : frameRecs) {
-            // Check if we have an area we are rendering
-            if (record != null) {
-                String[] propsArr = record.getProperties();
-                String[] propsArrKeys = record.getPropertiesKeys();
-                String[] modelArr = null;
-                String[] modelArrKeys = null;
-                if (resourceData.getModelType().equals("probsevere")) {
-                    modelArr = record.getSevereModelProps();
-                    modelArrKeys = record.getSevereModelKeys();
-                } else if (resourceData.getModelType().equals("probtor")) {
-                    modelArr = record.getTorModelProps();
-                    modelArrKeys = record.getTorModelKeys();
-                } else if (resourceData.getModelType().equals("probhail")) {
-                    modelArr = record.getHailModelProps();
-                    modelArrKeys = record.getHailModelKeys();
-                } else if (resourceData.getModelType().equals("probwind")) {
-                    modelArr = record.getWindModelProps();
-                    modelArrKeys = record.getWindModelKeys();
-                }
-                try {
-                    Geometry[] pg = record.getPolyGeoms();
-                    for (int i=0; i < pg.length; i++) {
-                        String[] props = propsArr[i].split("\\|");
-                        String[] propsKeys = propsArrKeys[i].split("\\|");
-                        String[] modelProps = modelArr[i].split("\\|");
-                        String[] modelPropsKeys = modelArrKeys[i].split("\\|");
-                        if (pg[i].contains(point)) {
-                            for (int j=0;j < modelPropsKeys.length; j++) {
-                                if (modelPropsKeys[j].substring(0,4).equalsIgnoreCase("line")) {
-                                    if (sample.length() == 0) {
-                                        sample.append(modelProps[j]);
-                                    } else {
-                                        sample.append("\n"+modelProps[j]);
-                                    }
-                                }
+        // Check if we have an area we are rendering
+        String[] propsArr = frameRec.getProperties();
+        String[] propsArrKeys = frameRec.getPropertiesKeys();
+        String[] modelArr = null;
+        String[] modelArrKeys = null;
+        if (resourceData.getModelType().equals("probsevere")) {
+            modelArr = frameRec.getSevereModelProps();
+            modelArrKeys = frameRec.getSevereModelKeys();
+        } else if (resourceData.getModelType().equals("probtor")) {
+            modelArr = frameRec.getTorModelProps();
+            modelArrKeys = frameRec.getTorModelKeys();
+        } else if (resourceData.getModelType().equals("probhail")) {
+            modelArr = frameRec.getHailModelProps();
+            modelArrKeys = frameRec.getHailModelKeys();
+        } else if (resourceData.getModelType().equals("probwind")) {
+            modelArr = frameRec.getWindModelProps();
+            modelArrKeys = frameRec.getWindModelKeys();
+        }
+        try {
+            Geometry[] pg = frameRec.getPolyGeoms();
+            for (int i=0; i < pg.length; i++) {
+                String[] props = propsArr[i].split("\\|");
+                String[] propsKeys = propsArrKeys[i].split("\\|");
+                String[] modelProps = modelArr[i].split("\\|");
+                String[] modelPropsKeys = modelArrKeys[i].split("\\|");
+                if (pg[i].contains(point)) {
+                    for (int j=0;j < modelPropsKeys.length; j++) {
+                        if (modelPropsKeys[j].substring(0,4).equalsIgnoreCase("line")) {
+                            if (sample.length() == 0) {
+                                sample.append(modelProps[j]);
+                            } else {
+                                sample.append("\n"+modelProps[j]);
                             }
-                            if (resourceData.isShowObjectID()) {
-                                for (int n=0; n < propsKeys.length; n++) {
-                                    if (propsKeys[n].equalsIgnoreCase("id")) {
-                                        sample.append("\nObjectID: "+props[n]);
-                                        break;
-                                    }
-                                }
-                            }
-                            return sample.toString();
                         }
                     }
-                } catch (Exception e) {
-                    statusHandler.handle(Priority.ERROR, "Error interogating ProbSevere data", e);
+                    if (resourceData.isShowObjectID()) {
+                        for (int n=0; n < propsKeys.length; n++) {
+                            if (propsKeys[n].equalsIgnoreCase("id")) {
+                                sample.append("\nObjectID: "+props[n]);
+                                break;
+                            }
+                        }
+                    }
+                    return sample.toString();
                 }
             }
+        } catch (Exception e) {
+            statusHandler.handle(Priority.ERROR, "Error interogating ProbSevere data", e);
         }
         return "";
     }
@@ -246,29 +244,19 @@ AbstractVizResource<ProbSevereResourceData, MapDescriptor> {
      */
     private void updateFrames(IGraphicsTarget target,
             PaintProperties paintProps) throws VizException {
-        Collection<ProbSevereRecord> frameRecs = null;
-        synchronized (frames) {
-            frameRecs = frames.get(this.displayedDataTime);
-            if (frameRecs == null) {
-                frameRecs = new LinkedHashSet<ProbSevereRecord>();
-                frames.put(this.displayedDataTime, frameRecs);
-            }
-        }
-
-        // Add all the new Records
-        Collection<ProbSevereRecord> newRecords = null;
+        // Add any new records
+        ProbSevereRecord newRecord = null;
         synchronized (unprocessedRecords) {
-            newRecords = unprocessedRecords.remove(this.displayedDataTime);
+            newRecord = unprocessedRecords.remove(this.displayedDataTime);
         }
-        if (newRecords != null) {
-            for (ProbSevereRecord record : newRecords) {
-                // If we need to draw anything for this record then keep it
-                if (record != null) {
-                    frameRecs.add(record);
+        if (newRecord != null) {
+            // If record is incomplete, data is missing and it shouldn't be kept.
+            if (newRecord.isRecordComplete()) {
+                synchronized (frames) {
+                    frames.put(this.displayedDataTime, newRecord);
                 }
             }
         }
-        newRecords.clear();
     }
 
     /**
@@ -281,154 +269,150 @@ AbstractVizResource<ProbSevereResourceData, MapDescriptor> {
         this.displayedDataTime = paintProps.getDataTime();
 
         // First check to see if we need to process new data
-        Collection<ProbSevereRecord> unprocessed = null;
+        ProbSevereRecord unprocessed = null;
         synchronized (unprocessedRecords) {
             unprocessed = unprocessedRecords.get(this.displayedDataTime);
         }
-        if (unprocessed != null && unprocessed.size() > 0) {
+        if (unprocessed != null) {
             updateFrames(target, paintProps);
         }
 
         // Hopefully we now have some data to display, if not bail
-        Collection<ProbSevereRecord> frameRecs = null;
+        ProbSevereRecord frameRec = null;
         synchronized (frames) {
-            frameRecs = frames.get(this.displayedDataTime);
+            frameRec = frames.get(this.displayedDataTime);
         }
-        if (frameRecs == null) {
+        if (frameRec == null) {
             this.displayedDataTime = null;
             return;
         } else {
-            for (ProbSevereRecord rec : frameRecs) {
-                if (rec != null && rec.getPolyGeoms() != null) {
-                    Geometry[] polyGeoms = rec.getPolyGeoms();
-                    String[] modelArr = null;
-                    String[] modelArrKeys = null;
-                    int[] probabilities = new int[polyGeoms.length];
-                    String[] torArr = null;
-                    String[] torArrKeys = null;
-                    int[] torProbs = new int[polyGeoms.length];
-                    if (resourceData.getModelType().equalsIgnoreCase("probsevere")) {
-                        modelArr = rec.getSevereModelProps();
-                        modelArrKeys = rec.getSevereModelKeys();
-                        torArr = rec.getTorModelProps();
-                        torArrKeys = rec.getTorModelKeys();
-                    } else if (resourceData.getModelType().equalsIgnoreCase("probtor")) {
-                        modelArr = rec.getTorModelProps();
-                        modelArrKeys = rec.getTorModelKeys();
-                    } else if (resourceData.getModelType().equalsIgnoreCase("probhail")) {
-                        modelArr = rec.getHailModelProps();
-                        modelArrKeys = rec.getHailModelKeys();
-                    } else if (resourceData.getModelType().equalsIgnoreCase("probwind")) {
-                        modelArr = rec.getWindModelProps();
-                        modelArrKeys = rec.getWindModelKeys();
+            Geometry[] polyGeoms = frameRec.getPolyGeoms();
+            String[] modelArr = null;
+            String[] modelArrKeys = null;
+            int[] probabilities = new int[polyGeoms.length];
+            String[] torArr = null;
+            String[] torArrKeys = null;
+            int[] torProbs = new int[polyGeoms.length];
+            if (resourceData.getModelType().equalsIgnoreCase("probsevere")) {
+                modelArr = frameRec.getSevereModelProps();
+                modelArrKeys = frameRec.getSevereModelKeys();
+                torArr = frameRec.getTorModelProps();
+                torArrKeys = frameRec.getTorModelKeys();
+            } else if (resourceData.getModelType().equalsIgnoreCase("probtor")) {
+                modelArr = frameRec.getTorModelProps();
+                modelArrKeys = frameRec.getTorModelKeys();
+            } else if (resourceData.getModelType().equalsIgnoreCase("probhail")) {
+                modelArr = frameRec.getHailModelProps();
+                modelArrKeys = frameRec.getHailModelKeys();
+            } else if (resourceData.getModelType().equalsIgnoreCase("probwind")) {
+                modelArr = frameRec.getWindModelProps();
+                modelArrKeys = frameRec.getWindModelKeys();
+            }
+            for (int n=0; n < polyGeoms.length; n++) {
+                String[] modelProps = modelArr[n].split("\\|");
+                String[] modelPropsKeys = modelArrKeys[n].split("\\|");
+                for (int p=0; p < modelPropsKeys.length; p++) {
+                    if (modelPropsKeys[p].equalsIgnoreCase("prob")) {
+                        probabilities[n] = Integer.parseInt(modelProps[p]);
+                        break;
                     }
-                    for (int n=0; n < polyGeoms.length; n++) {
-                        String[] modelProps = modelArr[n].split("\\|");
-                        String[] modelPropsKeys = modelArrKeys[n].split("\\|");
-                        for (int p=0; p < modelPropsKeys.length; p++) {
-                            if (modelPropsKeys[p].equalsIgnoreCase("prob")) {
-                                probabilities[n] = Integer.parseInt(modelProps[p]);
-                                break;
-                            }
-                        }
-                        if (resourceData.getModelType().equalsIgnoreCase("probsevere")) {
-                            String[] torProps = torArr[n].split("\\|");
-                            String[] torPropsKeys = torArrKeys[n].split("\\|");
-                            for (int p=0; p < torPropsKeys.length; p++) {
-                                if (torPropsKeys[p].equalsIgnoreCase("prob")) {
-                                    torProbs[n] = Integer.parseInt(torProps[p]);
-                                    break;
-                                }
-                            }
+                }
+                if (resourceData.getModelType().equalsIgnoreCase("probsevere")) {
+                    String[] torProps = torArr[n].split("\\|");
+                    String[] torPropsKeys = torArrKeys[n].split("\\|");
+                    for (int p=0; p < torPropsKeys.length; p++) {
+                        if (torPropsKeys[p].equalsIgnoreCase("prob")) {
+                            torProbs[n] = Integer.parseInt(torProps[p]);
+                            break;
                         }
                     }
-                    float thickline = 7.0f;
-                    float thinline = 4.0f;
-                    float bufferval = 0.05f;
-                    if (resourceData.getModelType().equalsIgnoreCase("probsevere")) {
-                        if (resourceData.getBaseShape().equalsIgnoreCase("tor")) {
-                            for (int j=resourceData.getTorShapeThresh(); j < 101; j++) {
-                                IWireframeShape iwfsTor = target.createWireframeShape(false, descriptor);
-                                boolean drawShape = false;
-                                for (int i=0; i < polyGeoms.length; i++) {
-                                    if (torProbs[i] == j) {
-                                        iwfsTor.addLineSegment(polyGeoms[i].getCoordinates());
-                                        drawShape = true;
-                                    }
-                                }
-                                if (drawShape) {
-                                    float lineval = thickline;
-                                    renderShapes(target, paintProps, iwfsTor, j, lineval);
-                                }
-                            }
-                            for (int j=0; j < 101; j++) {
-                                IWireframeShape iwfsSevere = target.createWireframeShape(false, descriptor);
-                                boolean drawShape = false;
-                                for (int i=0; i < polyGeoms.length; i++) {
-                                    if (probabilities[i] == j) {
-                                        iwfsSevere.addLineSegment(polyGeoms[i].buffer(bufferval,4).getCoordinates());
-                                        drawShape = true;
-                                    }
-                                }
-                                if (drawShape) {
-                                    float lineval = thickline;
-                                    if (j < resourceData.getProbThresh()) {
-                                        lineval = thinline;
-                                    }
-                                    renderShapes(target, paintProps, iwfsSevere, j, lineval);
-                                }
-                            }
-                        } else {
-                            for (int j=0; j < 101; j++) {
-                                IWireframeShape iwfsSevere = target.createWireframeShape(false, descriptor);
-                                boolean drawShape = false;
-                                for (int i=0; i < polyGeoms.length; i++) {
-                                    if (probabilities[i] == j) {
-                                        iwfsSevere.addLineSegment(polyGeoms[i].getCoordinates());
-                                        drawShape = true;
-                                    }
-                                }
-                                if (drawShape) {
-                                    float lineval = thickline;
-                                    if (j < resourceData.getProbThresh()) {
-                                        lineval = thinline;
-                                    }
-                                    renderShapes(target, paintProps, iwfsSevere, j, lineval);
-                                }
-                            }
-                            for (int j=resourceData.getTorShapeThresh(); j < 101; j++) {
-                                IWireframeShape iwfsTor = target.createWireframeShape(false, descriptor);
-                                boolean drawShape = false;
-                                for (int i=0; i < polyGeoms.length; i++) {
-                                    if (torProbs[i] == j) {
-                                        iwfsTor.addLineSegment(polyGeoms[i].buffer(bufferval,4).getCoordinates());
-                                        drawShape = true;
-                                    }
-                                }
-                                if (drawShape) {
-                                    float lineval = thickline;
-                                    renderShapes(target, paintProps, iwfsTor, j, lineval);
-                                }
+                }
+            }
+            float thickline = 7.0f;
+            float thinline = 4.0f;
+            float bufferval = 0.05f;
+            if (resourceData.getModelType().equalsIgnoreCase("probsevere")) {
+                if (resourceData.getBaseShape().equalsIgnoreCase("tor")) {
+                    for (int j=resourceData.getTorShapeThresh(); j < 101; j++) {
+                        IWireframeShape iwfsTor = target.createWireframeShape(false, descriptor);
+                        boolean drawShape = false;
+                        for (int i=0; i < polyGeoms.length; i++) {
+                            if (torProbs[i] == j) {
+                                iwfsTor.addLineSegment(polyGeoms[i].getCoordinates());
+                                drawShape = true;
                             }
                         }
-                    } else {
-                        for (int j=0; j < 101; j++) {
-                            IWireframeShape iwfs = target.createWireframeShape(false, descriptor);
-                            boolean drawShape = false;
-                            for (int i=0; i < polyGeoms.length; i++) {
-                                if (probabilities[i] == j) {
-                                    iwfs.addLineSegment(polyGeoms[i].getCoordinates());
-                                    drawShape = true;
-                                }
-                            }
-                            if (drawShape) {
-                                float lineval = thickline;
-                                if (j < resourceData.getProbThresh()) {
-                                    lineval = thinline;
-                                }
-                                renderShapes(target, paintProps, iwfs, j, lineval);
+                        if (drawShape) {
+                            float lineval = thickline;
+                            renderShapes(target, paintProps, iwfsTor, j, lineval);
+                        }
+                    }
+                    for (int j=0; j < 101; j++) {
+                        IWireframeShape iwfsSevere = target.createWireframeShape(false, descriptor);
+                        boolean drawShape = false;
+                        for (int i=0; i < polyGeoms.length; i++) {
+                            if (probabilities[i] == j) {
+                                iwfsSevere.addLineSegment(polyGeoms[i].buffer(bufferval,4).getCoordinates());
+                                drawShape = true;
                             }
                         }
+                        if (drawShape) {
+                            float lineval = thickline;
+                            if (j < resourceData.getProbThresh()) {
+                                lineval = thinline;
+                            }
+                            renderShapes(target, paintProps, iwfsSevere, j, lineval);
+                        }
+                    }
+                } else {
+                    for (int j=0; j < 101; j++) {
+                        IWireframeShape iwfsSevere = target.createWireframeShape(false, descriptor);
+                        boolean drawShape = false;
+                        for (int i=0; i < polyGeoms.length; i++) {
+                            if (probabilities[i] == j) {
+                                iwfsSevere.addLineSegment(polyGeoms[i].getCoordinates());
+                                drawShape = true;
+                            }
+                        }
+                        if (drawShape) {
+                            float lineval = thickline;
+                            if (j < resourceData.getProbThresh()) {
+                                lineval = thinline;
+                            }
+                            renderShapes(target, paintProps, iwfsSevere, j, lineval);
+                        }
+                    }
+                    for (int j=resourceData.getTorShapeThresh(); j < 101; j++) {
+                        IWireframeShape iwfsTor = target.createWireframeShape(false, descriptor);
+                        boolean drawShape = false;
+                        for (int i=0; i < polyGeoms.length; i++) {
+                            if (torProbs[i] == j) {
+                                iwfsTor.addLineSegment(polyGeoms[i].buffer(bufferval,4).getCoordinates());
+                                drawShape = true;
+                            }
+                        }
+                        if (drawShape) {
+                            float lineval = thickline;
+                            renderShapes(target, paintProps, iwfsTor, j, lineval);
+                        }
+                    }
+                }
+            } else {
+                for (int j=0; j < 101; j++) {
+                    IWireframeShape iwfs = target.createWireframeShape(false, descriptor);
+                    boolean drawShape = false;
+                    for (int i=0; i < polyGeoms.length; i++) {
+                        if (probabilities[i] == j) {
+                            iwfs.addLineSegment(polyGeoms[i].getCoordinates());
+                            drawShape = true;
+                        }
+                    }
+                    if (drawShape) {
+                        float lineval = thickline;
+                        if (j < resourceData.getProbThresh()) {
+                            lineval = thinline;
+                        }
+                        renderShapes(target, paintProps, iwfs, j, lineval);
                     }
                 }
             }
@@ -467,26 +451,18 @@ AbstractVizResource<ProbSevereResourceData, MapDescriptor> {
      * @param new ProbSevere record
      */
     protected void addRecord(ProbSevereRecord newRec) {
-        DataTime dataTime = newRec.getDataTime();
-        if (dataTime != null) {
-            Collection<ProbSevereRecord> records = null;
-            synchronized (unprocessedRecords) {
-                records = unprocessedRecords.get(dataTime);
-                if (records == null) {
-                    records = new LinkedHashSet<ProbSevereRecord>();
-                    unprocessedRecords.put(dataTime, records);
-                }
-            }
-            records.add(newRec);
-            for (ProbSevereRecord record : records) {
-                File f = HDF5Util.findHDF5Location(record);
+        if (newRec != null) {
+            DataTime dataTime = newRec.getDataTime();
+            if (dataTime != null) {
+                File f = HDF5Util.findHDF5Location(newRec);
                 IDataStore ds = DataStoreFactory.getDataStore(f);
                 try {
-                    record.retrieveFromDataStore(ds);
-                } catch (Exception e) {
+                    newRec.retrieveFromDataStore(ds);
                     synchronized (unprocessedRecords) {
-                        unprocessedRecords.remove(dataTime);
+                        unprocessedRecords.put(dataTime, newRec);
                     }
+                } catch (Exception e) {
+                    statusHandler.handle(Priority.ERROR, "Error retrieving new data from ProbSevere data store.", e);
                 }
             }
         }
@@ -518,21 +494,11 @@ AbstractVizResource<ProbSevereResourceData, MapDescriptor> {
     @Override
     public void remove(DataTime time) {
         super.remove(time);
-
-        Collection<ProbSevereRecord> notNeededFrameRecs = null;
         synchronized (frames) {
-            notNeededFrameRecs = frames.remove(time);
+            frames.remove(time);
         }
-        if (notNeededFrameRecs != null) {
-            notNeededFrameRecs.clear();
-        }
-
-        Collection<ProbSevereRecord> notNeededNewRecs = null;
         synchronized (unprocessedRecords) {
-            notNeededNewRecs = unprocessedRecords.remove(time);
-        }
-        if (notNeededNewRecs != null) {
-            notNeededNewRecs.clear();
+            unprocessedRecords.remove(time);
         }
     }
 

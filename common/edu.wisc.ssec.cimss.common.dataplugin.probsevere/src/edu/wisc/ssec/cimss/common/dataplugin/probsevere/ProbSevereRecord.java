@@ -45,7 +45,10 @@ import edu.wisc.ssec.cimss.common.dataplugin.probsevere.impl.ProbSevereShape;
  *                                      package name and methods to use ProbSevere 
  *                                      instead of ConvectProb to better reflect the 
  *                                      product origin.
- *
+ * Jul 23, 2019 DR 21469    lcronce     Added boolean method isRecordComplete() for
+ *              DR 21470                use within the visualization resource to make
+ *                                      sure we have a complete record to work with 
+ *                                      prior to drawing shapes.
  * </pre
  *
  * @author Lee Cronce
@@ -393,7 +396,7 @@ IPersistable {
      */
     public void retrieveFromDataStore(IDataStore dataStore) throws Exception {
         IDataRecord[] dataRec = dataStore.retrieve(getDataURI());
-        dataArrays = new Object[dataRec.length];
+        Object[] dataArrays = new Object[dataRec.length];
         for (int i = 0; i < dataRec.length; i++) {
             if (dataRec[i].getName().equals("polygons")) {
                 polygons = ((StringDataRecord) dataRec[i]).getStringData();
@@ -431,6 +434,20 @@ IPersistable {
             }
         }
         setDataArrays(dataArrays);
+    }
+
+    /**
+     * Determines if a record is complete with data
+     *
+     * @return boolean defining if the record is complete
+     */
+    public boolean isRecordComplete() {
+        for (Object arr : dataArrays) {
+            if (arr == null) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

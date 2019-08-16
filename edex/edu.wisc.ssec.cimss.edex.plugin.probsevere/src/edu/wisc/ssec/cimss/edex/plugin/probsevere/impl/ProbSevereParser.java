@@ -33,7 +33,9 @@ import edu.wisc.ssec.cimss.common.dataplugin.probsevere.impl.ProbSevereShape;
  *                                      package name and methods to use ProbSevere 
  *                                      instead of ConvectProb to better reflect the 
  *                                      product origin.
- * 
+ * Jul 23, 2019 DR 21469    lcronce     Repairing issue where legacy *CONVECTPROB* 
+ *                                      ascii files will not decode correctly within
+ *                                      ProbSevereParser(File file) constructor.
  * </pre
  *
  * @author Lee Cronce
@@ -61,7 +63,7 @@ public class ProbSevereParser {
 
         String fileFormat = file.getName().split("\\.")[1];
 
-        if (fileFormat.equals("ascii")) {
+        if (fileFormat.contains("ascii")) {
 
             psObject = setASCIIData(file);
             psObject.setFileFormat("ascii");
