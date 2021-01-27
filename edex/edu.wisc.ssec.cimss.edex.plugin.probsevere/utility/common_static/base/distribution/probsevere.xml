@@ -19,6 +19,7 @@
         further_licensing_information.
     -->
 <requestPatterns xmlns:ns2="group">
+    <regex>^YAUF01 KWNR</regex>
     <regex>PROBSEVERE.*.json</regex>
     <regex>CONVECTPROB.*.ascii</regex>
 </requestPatterns>

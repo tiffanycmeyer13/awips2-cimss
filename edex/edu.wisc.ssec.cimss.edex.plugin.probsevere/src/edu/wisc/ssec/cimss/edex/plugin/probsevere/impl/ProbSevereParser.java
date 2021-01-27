@@ -24,27 +24,34 @@ import edu.wisc.ssec.cimss.common.dataplugin.probsevere.impl.ProbSevereShape;
  * Data parser that parses shapefile records of NOAA/CIMSS ProbSevere Model
  *
  * <pre>
+ *
  * SOFTWARE HISTORY
- * Date         Ticket#     Engineer    Description
- * ------------ ----------  ----------- --------------------------
- * Mar 27, 2014 DCS 15298   lcronce     Initial Creation.
- * Nov 29, 2018 DCS 20816   lcronce     Updated plugin to address multiple data 
- *                                      file types and behavior. Also updated the 
- *                                      package name and methods to use ProbSevere 
- *                                      instead of ConvectProb to better reflect the 
- *                                      product origin.
- * Jul 23, 2019 DR 21469    lcronce     Repairing issue where legacy *CONVECTPROB* 
- *                                      ascii files will not decode correctly within
- *                                      ProbSevereParser(File file) constructor.
- * </pre
+ *
+ * Date         Ticket#    Engineer    Description
+ * ------------ ---------- ----------- --------------------------
+ * Mar 27, 2014 DCS 15298  lcronce     Initial creation.
+ * Nov 29, 2018 DCS 20816  lcronce     Updated plugin to address multiple
+ *                                     data file types and behavior. Also
+ *                                     updated the package name and methods
+ *                                     to use ProbSevere instead of ConvectProb
+ *                                     to better reflect the product origin.
+ * Jul 23, 2019 DR 21469   lcronce     Repairing issue where legacy *CONVECTPROB*
+ *                                     ascii files will not decode correctly
+ *                                     within ProbSevereParser(File file)
+ *                                     constructor.
+ * Jan 27, 2021 DCS 22416  lcronce     Fixes plugin to work with data files
+ *                                     with or without WMO headers.
+ *
+ * </pre>
  *
  * @author Lee Cronce
  * @version 1.0
- *
  */
+
 public class ProbSevereParser {
 
-    private final IUFStatusHandler statusHandler = UFStatus.getHandler(ProbSevereParser.class);
+    private final IUFStatusHandler statusHandler = UFStatus
+            .getHandler(ProbSevereParser.class);
 
     public ProbSevereObject psObject;
 
@@ -57,7 +64,8 @@ public class ProbSevereParser {
     /**
      * Calls setData method for defining shape data
      *
-     * @param File object passed on from EDEX
+     * @param File
+     *            object passed on from EDEX
      */
     public ProbSevereParser(File file) {
 
@@ -71,8 +79,12 @@ public class ProbSevereParser {
         } else {
 
             ObjectMapper mapper = new ObjectMapper();
+
             psObject = setJSONData(file, mapper);
-            psObject.setFileFormat("json");
+
+            if (psObject != null) {
+                psObject.setFileFormat("json");
+            }
 
         }
 
@@ -81,19 +93,53 @@ public class ProbSevereParser {
     /**
      * Calls findShapes method to define shape data
      *
-     * @param File object passed on from EDEX
+     * @param File
+     *            object passed on from EDEX
      */
     private ProbSevereObject setJSONData(File file, ObjectMapper mapper) {
 
         ProbSevereObject object = null;
 
-        try {
+        StringBuffer sb = new StringBuffer();
 
-            object = mapper.readValue(file, ProbSevereObject.class);
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+
+            if (reader != null) {
+
+                String line;
+
+                boolean dataStart = false;
+
+                while ((line = reader.readLine()) != null) {
+
+                    if (!dataStart && line.contains("{\"source\":")) {
+                        dataStart = true;
+                    }
+
+                    if (dataStart) {
+                        sb.append(line);
+                    }
+
+                }
+
+            }
+
+            if (sb.length() == 0) {
+
+                statusHandler.warn("No data found in ProbSevere JSON file: "
+                        + file.getName());
+
+            } else {
+
+                object = mapper.readValue(sb.toString(),
+                        ProbSevereObject.class);
+
+            }
 
         } catch (IOException e) {
 
-            statusHandler.error("Problem reading ProbSevere JSON data file: "+file.getName(), e);
+            statusHandler.error("Problem reading ProbSevere JSON data file: "
+                    + file.getName(), e);
 
         }
 
@@ -104,7 +150,8 @@ public class ProbSevereParser {
     /**
      * Calls findShapes method to define shape data
      *
-     * @param File object passed on from EDEX
+     * @param File
+     *            object passed on from EDEX
      */
     private ProbSevereObject setASCIIData(File file) {
 
@@ -130,7 +177,8 @@ public class ProbSevereParser {
     /**
      * Separates out lines of data from the input ASCII data file
      *
-     * @param File passed on by EDEX
+     * @param File
+     *            passed on by EDEX
      * @return ArrayList of lines of data from data file
      */
     private List<String> separateLines(File file) {
@@ -141,8 +189,9 @@ public class ProbSevereParser {
 
             if (file != null) {
 
-                BufferedReader reader = new BufferedReader(new FileReader(file));
-                fileLines = new ArrayList<String>();
+                BufferedReader reader = new BufferedReader(
+                        new FileReader(file));
+                fileLines = new ArrayList<>();
                 String line;
 
                 while ((line = reader.readLine()) != null) {
@@ -157,7 +206,10 @@ public class ProbSevereParser {
 
         } catch (Exception e) {
 
-            statusHandler.error("Problem with reading lines of the ProbSevere ASCII input file: " + file.getName(), e);
+            statusHandler.error(
+                    "Problem with reading lines of the ProbSevere ASCII input file: "
+                            + file.getName(),
+                    e);
 
         }
 
@@ -168,7 +220,9 @@ public class ProbSevereParser {
     /**
      * Parses out the data from the passed file object
      *
-     * @param ArrayList of String type containing individual lines of a ProbSevere data file
+     * @param ArrayList
+     *            of String type containing individual lines of a ProbSevere
+     *            data file
      * @return String object containing ProbSevere data valid time
      */
     private String findTime(List<String> fileLines, File file) {
@@ -181,23 +235,25 @@ public class ProbSevereParser {
 
                 String vTime = fileLines.get(0);
 
-                if (!vTime.substring(0,5).equals("Valid")) {
+                if (!vTime.substring(0, 5).equals("Valid")) {
 
-                    if (file.getName().substring(0,4).equals("SSEC")) {
+                    if (file.getName().substring(0, 4).equals("SSEC")) {
 
-                        validTime = file.getName().substring(23,38)+" UTC";
+                        validTime = file.getName().substring(23, 38) + " UTC";
 
                     }
 
                 } else {
 
-                    validTime = vTime.split(" ")[1]+" UTC";
+                    validTime = vTime.split(" ")[1] + " UTC";
 
                 }
 
             } catch (Exception e) {
 
-                statusHandler.error("Problem acquiring ProbSevere data valid date and time", e);
+                statusHandler.error(
+                        "Problem acquiring ProbSevere data valid date and time",
+                        e);
 
             }
 
@@ -209,29 +265,30 @@ public class ProbSevereParser {
     /**
      * Parses out the data from the passed file object
      *
-     * @param File object passed on from EDEX
+     * @param File
+     *            object passed on from EDEX
      * @return ArrayList containing the shape data
      */
     private List<ProbSevereShape> getShapeFeatures(List<String> fileLines) {
 
-        List<ProbSevereShape> features = new ArrayList<ProbSevereShape>();
+        List<ProbSevereShape> features = new ArrayList<>();
 
         if (fileLines != null) {
 
             for (String line : fileLines) {
 
-                if (!line.substring(0,5).equals("Valid")) {
+                if (!line.substring(0, 5).equals("Valid")) {
 
                     try {
 
                         ProbSevereShape feature = new ProbSevereShape();
-                        Map<String, String> properties = new LinkedHashMap<String, String>();
+                        Map<String, String> properties = new LinkedHashMap<>();
                         ProbSevereGeometry geometry = new ProbSevereGeometry();
                         ProbSevereModelType modelType = new ProbSevereModelType();
-                        Map<String, String> severeModelProps = new LinkedHashMap<String, String>();
-                        Map<String, String> torModelProps = new LinkedHashMap<String, String>();
-                        Map<String, String> hailModelProps = new LinkedHashMap<String, String>();
-                        Map<String, String> windModelProps = new LinkedHashMap<String, String>();
+                        Map<String, String> severeModelProps = new LinkedHashMap<>();
+                        Map<String, String> torModelProps = new LinkedHashMap<>();
+                        Map<String, String> hailModelProps = new LinkedHashMap<>();
+                        Map<String, String> windModelProps = new LinkedHashMap<>();
 
                         String[] shapeAttributes = line.split(":");
 
@@ -240,30 +297,36 @@ public class ProbSevereParser {
 
                         String probability = shapeAttributes[1];
                         severeModelProps.put("PROB", probability);
-                        severeModelProps.put("LINE01", "ProbSevere: "+probability+"%");
+                        severeModelProps.put("LINE01",
+                                "ProbSevere: " + probability + "%");
 
                         String mucape = shapeAttributes[2];
-                        severeModelProps.put("LINE02", "- MUCAPE: "+mucape);
+                        severeModelProps.put("LINE02", "- MUCAPE: " + mucape);
 
                         String ebshear = shapeAttributes[3];
-                        severeModelProps.put("LINE03", "- EBShear: "+ebshear);
+                        severeModelProps.put("LINE03", "- EBShear: " + ebshear);
 
                         String mesh = shapeAttributes[4];
-                        severeModelProps.put("LINE04", "- MESH: "+mesh);
+                        severeModelProps.put("LINE04", "- MESH: " + mesh);
 
                         String rcemiss = shapeAttributes[5];
-                        severeModelProps.put("LINE05", "- MaxRC Emiss: "+rcemiss);
+                        severeModelProps.put("LINE05",
+                                "- MaxRC Emiss: " + rcemiss);
 
                         String rcicecf = shapeAttributes[6];
-                        severeModelProps.put("LINE06", "- MaxRC IceCF: "+rcicecf);
+                        severeModelProps.put("LINE06",
+                                "- MaxRC IceCF: " + rcicecf);
 
                         String[] points = shapeAttributes[7].split(",");
-                        float[][][] coordinates = new float[1][points.length/2][2];
-                        for (int i=0; i < points.length; i++) {
-                            if ((i == 0) || ((i%2) == 0)) {
-                                coordinates[0][i/2][1] = Float.parseFloat(points[i]);
+                        float[][][] coordinates = new float[1][points.length
+                                / 2][2];
+                        for (int i = 0; i < points.length; i++) {
+                            if ((i == 0) || ((i % 2) == 0)) {
+                                coordinates[0][i / 2][1] = Float
+                                        .parseFloat(points[i]);
                             } else {
-                                coordinates[0][(i-1)/2][0] = Float.parseFloat(points[i]);
+                                coordinates[0][(i - 1) / 2][0] = Float
+                                        .parseFloat(points[i]);
                             }
                         }
                         geometry.setCoordinates(coordinates);
@@ -272,21 +335,21 @@ public class ProbSevereParser {
                         String[] props = objectprops.split(";");
                         properties.put("ID", props[0]);
                         if (props.length > 1) {
-                            severeModelProps.put("LINE07", "-"+props[1]);
+                            severeModelProps.put("LINE07", "-" + props[1]);
                         }
 
                         String message = "currently not available.\nPlease choose ProbSevere or check with your\nITO for ProbSevere (All Hazards) data feed capability.";
                         torModelProps.put("PROB", "0");
                         torModelProps.put("LINE01", "¯\\_(ツ)_/¯");
-                        torModelProps.put("LINE02", "ProbTor "+message);
+                        torModelProps.put("LINE02", "ProbTor " + message);
 
                         hailModelProps.put("PROB", "0");
                         hailModelProps.put("LINE01", "¯\\_(ツ)_/¯");
-                        hailModelProps.put("LINE02", "ProbHail "+message);
+                        hailModelProps.put("LINE02", "ProbHail " + message);
 
                         windModelProps.put("PROB", "0");
                         windModelProps.put("LINE01", "¯\\_(ツ)_/¯");
-                        windModelProps.put("LINE02", "ProbWind "+message);
+                        windModelProps.put("LINE02", "ProbWind " + message);
 
                         modelType.setProbsevere(severeModelProps);
                         modelType.setProbtor(torModelProps);
@@ -301,7 +364,10 @@ public class ProbSevereParser {
 
                     } catch (Exception e) {
 
-                        statusHandler.error("Problem defining ProbSevere shape object from read line: " + line, e);
+                        statusHandler.error(
+                                "Problem defining ProbSevere shape object from read line: "
+                                        + line,
+                                e);
 
                     }
 
