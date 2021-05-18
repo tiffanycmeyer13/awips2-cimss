@@ -11,6 +11,7 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 
+
 import org.hibernate.annotations.Index;
 
 import com.raytheon.uf.common.dataplugin.PluginDataObject;
@@ -22,8 +23,8 @@ import com.raytheon.uf.common.datastorage.records.StringDataRecord;
 import com.raytheon.uf.common.serialization.annotations.DynamicSerialize;
 import com.raytheon.uf.common.status.IUFStatusHandler;
 import com.raytheon.uf.common.status.UFStatus;
-import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.io.WKTReader;
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.io.WKTReader;
 
 import edu.wisc.ssec.cimss.common.dataplugin.probsevere.impl.ProbSevereGeometry;
 import edu.wisc.ssec.cimss.common.dataplugin.probsevere.impl.ProbSevereModelType;

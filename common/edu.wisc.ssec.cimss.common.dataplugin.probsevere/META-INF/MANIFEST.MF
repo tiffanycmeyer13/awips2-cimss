@@ -13,7 +13,7 @@ Import-Package: com.fasterxml.jackson.annotation,
  com.raytheon.uf.common.datastorage.records,
  com.raytheon.uf.common.serialization.annotations,
  com.raytheon.uf.common.status,
- org.locationtech.jts.geom,
- org.locationtech.jts.io,
- javax.persistence,
- org.hibernate.annotations
+ com.vividsolutions.jts.geom,
+ com.vividsolutions.jts.io,
+ javax.persistence
+Require-Bundle: org.hibernate;bundle-version="4.2.15"
