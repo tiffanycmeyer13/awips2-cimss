@@ -3,6 +3,7 @@ package edu.wisc.ssec.cimss.edex.plugin.probsevere;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+
 import com.raytheon.uf.common.dataplugin.PluginDataObject;
 import com.raytheon.uf.common.status.IUFStatusHandler;
 import com.raytheon.uf.common.status.UFStatus;
@@ -23,21 +24,20 @@ import edu.wisc.ssec.cimss.edex.plugin.probsevere.impl.ProbSevereParser;
  * Date         Ticket#     Engineer    Description
  * ------------ ----------  ----------- --------------------------
  * Mar 27, 2014 DCS 15298   lcronce     Initial Creation.
- * Nov 29, 2018 DCS 20816   lcronce     Updated plugin to address multiple data 
- *                                      file types and behavior. Also updated the 
- *                                      package name and methods to use ProbSevere 
- *                                      instead of ConvectProb to better reflect the 
+ * Nov 29, 2018 DCS 20816   lcronce     Updated plugin to address multiple data
+ *                                      file types and behavior. Also updated the
+ *                                      package name and methods to use ProbSevere
+ *                                      instead of ConvectProb to better reflect the
  *                                      product origin.
- *
- * </pre
+ * Feb 16, 2022 8608        mapeters    Handle PDO.traceId changes
+ * </pre>
  *
  * @author Lee Cronce
- * @version 1.0
- *
  */
 public class ProbSevereDecoder {
 
-    private final IUFStatusHandler statusHandler = UFStatus.getHandler(ProbSevereDecoder.class);
+    private final IUFStatusHandler statusHandler = UFStatus
+            .getHandler(ProbSevereDecoder.class);
 
     private String traceId = null;
 
@@ -48,10 +48,11 @@ public class ProbSevereDecoder {
     }
 
     /**
-     * Creates the data object that will be persisted to the database and
-     * hdf5 repository
+     * Creates the data object that will be persisted to the database and hdf5
+     * repository
      *
-     * @param File object passed by EDEX
+     * @param File
+     *            object passed by EDEX
      * @return PluginDataObject[] object of shape data
      * @throws Throwable
      */
@@ -61,14 +62,10 @@ public class ProbSevereDecoder {
         ProbSevereObject psObject = psParser.psObject;
         ProbSevereRecord psRecord = null;
 
-        if (psObject.getFeatures().size() > 0) {
-
+        if (!psObject.getFeatures().isEmpty()) {
             psRecord = new ProbSevereRecord(psObject);
-
         } else {
-
             return new PluginDataObject[0];
-
         }
 
         String validTime = psObject.getValidTime();
@@ -77,10 +74,14 @@ public class ProbSevereDecoder {
             Calendar c = TimeUtil.newCalendar();
             psRecord.setInsertTime(c);
             try {
-                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss 'UTC'");
+                SimpleDateFormat dateFormat = new SimpleDateFormat(
+                        "yyyyMMdd_HHmmss 'UTC'");
                 psRecord.setDataTime(new DataTime(dateFormat.parse(validTime)));
             } catch (Exception e) {
-                statusHandler.error("Problem defining valid ProbSevere file time information using: " + validTime, e);
+                statusHandler.error(
+                        "Problem defining valid ProbSevere file time information using: "
+                                + validTime,
+                        e);
                 return new PluginDataObject[0];
             }
         } else {
@@ -88,7 +89,7 @@ public class ProbSevereDecoder {
         }
 
         if (psRecord != null) {
-            psRecord.setTraceId(traceId);
+            psRecord.setSourceTraceId(traceId);
         }
 
         return new PluginDataObject[] { psRecord };
