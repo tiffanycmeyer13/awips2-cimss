@@ -33,12 +33,11 @@ import edu.wisc.ssec.cimss.edex.plugin.probsevere.impl.ProbSevereParser;
  *                                     to better reflect the product origin.
  * Jan 27, 2021 DCS 22416  lcronce     Fixes plugin to work with data files
  *                                     with or without WMO headers.
+ * Feb 16, 2022 8608       mapeters    Handle PDO.traceId changes
  *
  * </pre>
  *
  * @author Lee Cronce
- * @version 1.0
- *
  */
 
 public class ProbSevereDecoder {
@@ -69,7 +68,7 @@ public class ProbSevereDecoder {
         ProbSevereObject psObject = psParser.psObject;
         ProbSevereRecord psRecord = null;
 
-        if (psObject != null && psObject.getFeatures().size() > 0) {
+        if (psObject != null && !psObject.getFeatures().isEmpty()) {
             psRecord = new ProbSevereRecord(psObject);
         } else {
             return new PluginDataObject[0];
@@ -96,7 +95,7 @@ public class ProbSevereDecoder {
         }
 
         if (psRecord != null) {
-            psRecord.setTraceId(traceId);
+            psRecord.setSourceTraceId(traceId);
         }
 
         return new PluginDataObject[] { psRecord };
