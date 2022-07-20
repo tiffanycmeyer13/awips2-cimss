@@ -25,6 +25,7 @@ import edu.wisc.ssec.cimss.common.dataplugin.probsevere.ProbSevereRecord;
  *                                      to use ProbSevere instead of ConvectProb
  *                                      to better reflect the product origin.
  * Oct 13, 2021 8608        mapeters    Pass metadata ids to datastore
+ * Jun 22, 2022 8865        mapeters    Update populateDataStore to return boolean
  *
  * </pre>
  *
@@ -43,20 +44,22 @@ public class ProbSevereDao extends PluginDao {
     }
 
     @Override
-    protected IDataStore populateDataStore(IDataStore dataStore,
-            IPersistable obj) throws Exception {
+    protected boolean populateDataStore(IDataStore dataStore, IPersistable obj)
+            throws Exception {
         ProbSevereRecord psRec = (ProbSevereRecord) obj;
         IMetadataIdentifier metaId = new DataUriMetadataIdentifier(psRec);
 
+        boolean populated = false;
         for (int i = 0; i < psRec.getDataArrays().length; i++) {
             IDataRecord record = DataStoreFactory.createStorageRecord(
                     psRec.getDataNames()[i], psRec.getDataURI(),
                     psRec.getDataArrays()[i]);
             record.setCorrelationObject(psRec);
             dataStore.addDataRecord(record, metaId);
+            populated = true;
         }
 
-        return dataStore;
+        return populated;
     }
 
 }
