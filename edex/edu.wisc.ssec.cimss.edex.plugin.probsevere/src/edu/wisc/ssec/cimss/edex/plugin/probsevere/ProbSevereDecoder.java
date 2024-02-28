@@ -20,20 +20,26 @@ import edu.wisc.ssec.cimss.edex.plugin.probsevere.impl.ProbSevereParser;
  * Data decoder that reads shapefile records of the NOAA/CIMSS ProbSevere Model
  *
  * <pre>
+ *
  * SOFTWARE HISTORY
- * Date         Ticket#     Engineer    Description
- * ------------ ----------  ----------- --------------------------
- * Mar 27, 2014 DCS 15298   lcronce     Initial Creation.
- * Nov 29, 2018 DCS 20816   lcronce     Updated plugin to address multiple data
- *                                      file types and behavior. Also updated the
- *                                      package name and methods to use ProbSevere
- *                                      instead of ConvectProb to better reflect the
- *                                      product origin.
- * Feb 16, 2022 8608        mapeters    Handle PDO.traceId changes
+ *
+ * Date         Ticket#    Engineer    Description
+ * ------------ ---------- ----------- --------------------------
+ * Mar 27, 2014 DCS 15298  lcronce     Initial creation.
+ * Nov 29, 2018 DCS 20816  lcronce     Updated plugin to address multiple
+ *                                     data file types and behavior. Also
+ *                                     updated the package name and methods to
+ *                                     use ProbSevere instead of ConvectProb
+ *                                     to better reflect the product origin.
+ * Jan 27, 2021 DCS 22416  lcronce     Fixes plugin to work with data files
+ *                                     with or without WMO headers.
+ * Feb 16, 2022 8608       mapeters    Handle PDO.traceId changes
+ *
  * </pre>
  *
  * @author Lee Cronce
  */
+
 public class ProbSevereDecoder {
 
     private final IUFStatusHandler statusHandler = UFStatus
@@ -62,7 +68,7 @@ public class ProbSevereDecoder {
         ProbSevereObject psObject = psParser.psObject;
         ProbSevereRecord psRecord = null;
 
-        if (!psObject.getFeatures().isEmpty()) {
+        if (psObject != null && !psObject.getFeatures().isEmpty()) {
             psRecord = new ProbSevereRecord(psObject);
         } else {
             return new PluginDataObject[0];
