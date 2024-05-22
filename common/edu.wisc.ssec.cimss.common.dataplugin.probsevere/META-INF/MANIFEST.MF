@@ -15,5 +15,5 @@ Import-Package: com.fasterxml.jackson.annotation,
  com.raytheon.uf.common.status,
  org.locationtech.jts.geom,
  org.locationtech.jts.io,
- javax.persistence,
+ jakarta.persistence,
  org.hibernate.annotations
