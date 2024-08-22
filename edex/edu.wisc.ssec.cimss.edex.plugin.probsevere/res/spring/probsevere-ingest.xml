@@ -1,6 +1,6 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
   http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd">
 
     <bean id="probsevereDecoder"
@@ -12,28 +12,10 @@
         <constructor-arg value="jms-durable:queue:Ingest.probsevere"/>
     </bean>
 
-    <camelContext id="probsevere-camel"
-        xmlns="http://camel.apache.org/schema/spring"
-        errorHandlerRef="errorHandler"
-        autoStartup="false">
-
-        <!-- Begin probsevere routes -->
-        <route id="probsevereIngestRoute">
-            <from uri="jms-durable:queue:Ingest.probsevere"/>
-            <setHeader name="pluginName">
-                <constant>probsevere</constant>
-            </setHeader>
-            <doTry>
-                <pipeline>
-                    <bean ref="stringToFile" />
-                    <bean ref="probsevereDecoder" method="decode" />
-                    <to uri="direct-vm:persistIndexAlert" />
-                </pipeline>
-                <doCatch>
-                    <exception>java.lang.Throwable</exception>
-                    <to uri="log:probsevere?level=ERROR"/>
-                </doCatch>
-            </doTry>
-        </route>
-    </camelContext>
+    <bean id="probsevere-camel" factory-bean="routeContextFactory" factory-method="create">
+        <constructor-arg>
+            <bean class="edu.wisc.ssec.cimss.edex.plugin.probsevere.ProbSevereCamelRoutes" />
+        </constructor-arg>
+    </bean>
+  
 </beans>
