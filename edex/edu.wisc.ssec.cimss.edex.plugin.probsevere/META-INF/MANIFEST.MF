@@ -11,4 +11,4 @@ Require-Bundle: com.raytheon.uf.common.dataplugin,
  com.raytheon.uf.edex.database,
  edu.wisc.ssec.cimss.common.dataplugin.probsevere,
  com.fasterxml.jackson,
- com.raytheon.uf.edex.esb.camel
+ com.raytheon.uf.edex.routes

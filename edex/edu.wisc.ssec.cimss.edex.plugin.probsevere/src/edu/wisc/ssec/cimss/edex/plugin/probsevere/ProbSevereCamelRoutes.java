@@ -20,7 +20,7 @@
 
 package edu.wisc.ssec.cimss.edex.plugin.probsevere;
 
-import com.raytheon.uf.edex.esb.camel.EDEXRouteBuilder;
+import com.raytheon.uf.edex.routes.EDEXRouteBuilder;
 
 /**
  * Camel routes converted from file "probsevere-ingest.xml", context "probsevere-camel"
