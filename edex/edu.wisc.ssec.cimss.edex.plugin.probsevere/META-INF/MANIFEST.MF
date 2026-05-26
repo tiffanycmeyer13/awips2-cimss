@@ -3,11 +3,12 @@ Bundle-ManifestVersion: 2
 Bundle-Name: NOAA/CIMSS ProbSevere Model EDEX Plugin
 Bundle-SymbolicName: edu.wisc.ssec.cimss.edex.plugin.probsevere
 Bundle-Version: 1.20.3.qualifier
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Require-Bundle: com.raytheon.uf.common.dataplugin,
  com.raytheon.uf.common.datastorage,
  com.raytheon.uf.common.time,
  com.raytheon.uf.common.status,
  com.raytheon.uf.edex.database,
  edu.wisc.ssec.cimss.common.dataplugin.probsevere,
- com.fasterxml.jackson
+ com.fasterxml.jackson,
+ com.raytheon.uf.edex.routes

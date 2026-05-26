@@ -3,7 +3,8 @@ Bundle-ManifestVersion: 2
 Bundle-Name: NOAA/CIMSS ProbSevere Model Visualization Plugin
 Bundle-SymbolicName: edu.wisc.ssec.cimss.viz.probsevere;singleton:=true
 Bundle-Version: 1.19.3.qualifier
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Eclipse-BundleShape: dir
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: com.raytheon.uf.common.colormap,
  com.raytheon.uf.common.colormap.prefs,
  com.raytheon.uf.common.dataplugin,
@@ -26,7 +27,7 @@ Import-Package: com.raytheon.uf.common.colormap,
  edu.wisc.ssec.cimss.common.dataplugin.probsevere,
  edu.wisc.ssec.cimss.common.dataplugin.probsevere.impl
 Require-Bundle: org.eclipse.swt,
- javax.xml.bind
+ jakarta.xml.bind
 Bundle-ActivationPolicy: lazy
 Export-Package: edu.wisc.ssec.cimss.viz.probsevere,
  edu.wisc.ssec.cimss.viz.probsevere.rsc
